@@ -1,0 +1,94 @@
+<head>
+    <title>Google Homepage</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link href="./css/main.css" rel="stylesheet">
+
+    <!-- api gateway generated sdk -->
+    <script src="./assets/js/sdk/lib/axios/dist/axios.standalone.js"></script>
+    <script src="./assets/js/sdk/lib/CryptoJS/rollups/hmac-sha256.js"></script>
+    <script src="./assets/js/sdk/lib/CryptoJS/rollups/sha256.js"></script>
+    <script src="./assets/js/sdk/lib/CryptoJS/components/hmac.js"></script>
+    <script src="./assets/js/sdk/lib/CryptoJS/components/enc-base64.js"></script>
+    <script src="./assets/js/sdk/lib/url-template/url-template.js"></script>
+    <script src="./assets/js/sdk/lib/apiGatewayCore/sigV4Client.js"></script>
+    <script src="./assets/js/sdk/lib/apiGatewayCore/apiGatewayClient.js"></script>
+    <script src="./assets/js/sdk/lib/apiGatewayCore/simpleHttpClient.js"></script>
+    <script src="./assets/js/sdk/lib/apiGatewayCore/utils.js"></script>
+    <script src="./assets/js/sdk/apigClient.js"></script>
+
+</head>
+
+<body>
+
+<p>Upload Images</p>
+<!-- BUTTONS -->
+
+<div class="form">
+    <input type="text" class="name-input" id="custom-tag" placeholder="Add Tag">
+    <input type="file" name="file" accept="image/png, image/jpeg" id="file">
+</div>
+<div class="buttons">
+    <input class="upload_button" type="submit" value="Upload" id="upload">
+</div>
+
+<p>Testing 3 Search New  Images</p>
+<!-- FORM SEARCH -->
+<div class="form">
+    <form>
+        <label for="form-search"></label>
+        <input type="text" class="message-input" id="form-search" placeholder="Show images of?">
+        <button id="record">Record</button>
+    </form>
+</div>
+
+<div class="buttons">
+    <input class="search_button" type="submit" value="Search" id="search">
+</div>
+
+<div id="image_grid">
+
+
+</div>
+
+<script>
+    var sdk = apigClientFactory.newClient({'apiKey': 'aMj4OvKWoz1dJylEnvEf999MFEDo7YcSH3zWrnJa'});
+</script>
+
+<script>
+
+    // function encodeImageFileAsURL(element) {
+    //     console.log(element)
+    //     var file = element.files[0];
+    //     var reader = new FileReader();
+    //     reader.onloadend = function () {
+    //         console.log(file.name);
+    //         console.log("Tags: ", $('.message-input').val());
+    //         console.log("Going to upload")
+    //         //console.log('RESULT', reader.result);
+    //         //call upload in sdk and pass reader.result
+    //         callUploadApi(reader.result, file.name, $('.message-input').val(), $('.name-input').val())
+    //     }
+    //     reader.readAsDataURL(file);
+    // }
+    //
+    // function callUploadApi(encoded_image, image_name, custom_tags, name) {
+    //     // params, body, additionalParams
+    //     return sdk.uploadBucketObjectPut({
+    //         "bucket": "photo-app-s3-for-images",
+    //         "object": image_name
+    //     }, {
+    //         'ImageName': image_name,
+    //         'x-amz-meta-customLabels': custom_tags,
+    //         'x-amz-meta-name': name,
+    //         'img64': encoded_image
+    //     }, {});
+    // }
+
+</script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="./js/record.js"></script>
+<script src="./js/search.js"></script>
+<script src="./js/upload.js"></script>
+
+</body>

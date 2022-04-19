@@ -1,0 +1,10 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - aws cloudformation package --template-file indexLambda.template.yaml --s3-bucket photo-app-s3-for-artifacts --output-template-file indexLambda.yaml
+artifacts:
+  files:
+    - "indexLambda.template.yaml"
+    - "indexLambda.yaml"

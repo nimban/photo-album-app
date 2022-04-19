@@ -1,0 +1,15 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  IndexLambdaFuntion:
+    Properties:
+      Code:
+        S3Bucket: photo-app-s3-for-artifacts
+        S3Key: searchLambda.zip
+      Handler: lambda_function.lambda_handler
+      PackageType: Zip
+      Role: "arn:aws:iam::686963384763:role/photoAppIAMForLambdaRole"
+      Runtime: python3.8
+      Timeout: 50
+    Type: "AWS::Lambda::Function"
+Transform: "AWS::Serverless-2016-10-31"

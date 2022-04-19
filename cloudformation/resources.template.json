@@ -1,0 +1,479 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "photoAppS3ForImages": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": "photo-app-s3-for-images",
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": false,
+          "BlockPublicPolicy": false,
+          "IgnorePublicAcls": false,
+          "RestrictPublicBuckets": false
+        },
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        }
+      }
+    },
+    "photoAppS3ForFrontend": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": "photo-app-s3-for-frontend",
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": false,
+          "BlockPublicPolicy": false,
+          "IgnorePublicAcls": false,
+          "RestrictPublicBuckets": false
+        },
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        },
+        "AccessControl": "PublicRead",
+        "MetricsConfigurations": [
+          {
+            "Id": "EntireBucket"
+          }
+        ],
+        "WebsiteConfiguration": {
+          "IndexDocument": "index.html",
+          "ErrorDocument": "error.html",
+          "RoutingRules": []
+        }
+      }
+    },
+    "photoAppS3ForArtifacts": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": "photo-app-s3-for-artifacts",
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": false,
+          "BlockPublicPolicy": false,
+          "IgnorePublicAcls": false,
+          "RestrictPublicBuckets": false
+        },
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        }
+      }
+    },
+    "photoAppIAMForLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/CloudWatchFullAccess",
+          "arn:aws:iam::aws:policy/AmazonOpenSearchServiceFullAccess",
+          "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+          "arn:aws:iam::aws:policy/AmazonRekognitionFullAccess",
+          "arn:aws:iam::aws:policy/AmazonLexFullAccess"
+        ],
+        "Policies": [
+          {
+            "PolicyName": "adminPoliciesForLambda",
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                    "es:*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ],
+        "RoleName": "photoAppIAMForLambdaRole"
+      }
+    },
+    "photoAppOSForImages": {
+      "Type": "AWS::OpenSearchService::Domain",
+      "Properties": {
+        "DomainName": "photo-app-os-for-images",
+        "EBSOptions": {
+          "EBSEnabled": true,
+          "VolumeSize": 10,
+          "VolumeType": "gp2"
+        }
+      }
+    },
+    "photoAppAPIConfig": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "ApiKeySourceType": "HEADER",
+        "BinaryMediaTypes": [
+          "application~1octet-stream"
+        ],
+        "Body": {
+          "openapi": "3.0.1",
+          "info": {
+            "title": "Photo App APIs",
+            "description": "AI Photo Search application, built during the Cloud and Big Data course at Columbia University.",
+            "version": "1.0.0"
+          },
+          "servers": [
+            {
+              "url": "https://pct4fmeeo6.execute-api.us-east-1.amazonaws.com/{basePath}",
+              "variables": {
+                "basePath": {
+                  "default": "/dev"
+                }
+              }
+            }
+          ],
+          "paths": {
+            "/upload/{bucket}/{object}": {
+              "put": {
+                "parameters": [
+                  {
+                    "name": "object",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  },
+                  {
+                    "name": "bucket",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Origin": {
+                        "schema": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "content": {}
+                  }
+                },
+                "x-amazon-apigateway-integration": {
+                  "credentials": "arn:aws:iam::686963384763:role/service-role/search-photos-role-57dbpw2q",
+                  "httpMethod": "PUT",
+                  "uri": "arn:aws:apigateway:us-east-1:s3:path/{bucket}/{key}",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Origin": "'*'"
+                      },
+                      "responseTemplates": {
+                        "application/json": "{\"statusCode\":200}"
+                      }
+                    }
+                  },
+                  "requestParameters": {
+                    "integration.request.path.key": "method.request.path.object",
+                    "integration.request.path.bucket": "method.request.path.bucket"
+                  },
+                  "passthroughBehavior": "when_no_match",
+                  "type": "aws"
+                }
+              },
+              "options": {
+                "parameters": [
+                  {
+                    "name": "object",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  },
+                  {
+                    "name": "bucket",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Origin": {
+                        "schema": {
+                          "type": "string"
+                        }
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "schema": {
+                          "type": "string"
+                        }
+                      },
+                      "Access-Control-Allow-Headers": {
+                        "schema": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "content": {}
+                  }
+                },
+                "x-amazon-apigateway-integration": {
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,PUT'",
+                        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'"
+                      }
+                    }
+                  },
+                  "requestTemplates": {
+                    "application/json": "{\"statusCode\": 200}"
+                  },
+                  "passthroughBehavior": "when_no_match",
+                  "type": "mock"
+                }
+              }
+            },
+            "/upload": {
+              "put": {
+                "operationId": "uploadPhoto",
+                "responses": {
+                  "500": {
+                    "description": "500 response",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/Error"
+                        }
+                      }
+                    }
+                  },
+                  "200": {
+                    "description": "200 response",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/MODEL2acc98"
+                        }
+                      }
+                    }
+                  },
+                  "403": {
+                    "description": "403 response",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/Error"
+                        }
+                      }
+                    }
+                  }
+                },
+                "x-amazon-apigateway-integration": {
+                  "responses": {
+                    "default": {
+                      "statusCode": "200"
+                    }
+                  },
+                  "requestTemplates": {
+                    "application/json": "{\"statusCode\": 200}"
+                  },
+                  "passthroughBehavior": "when_no_match",
+                  "type": "mock"
+                }
+              }
+            },
+            "/search": {
+              "get": {
+                "operationId": "searchPhotos",
+                "parameters": [
+                  {
+                    "name": "q",
+                    "in": "query",
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "responses": {
+                  "500": {
+                    "description": "500 response",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/Error"
+                        }
+                      }
+                    }
+                  },
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Origin": {
+                        "schema": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/SearchResponse"
+                        }
+                      }
+                    }
+                  },
+                  "403": {
+                    "description": "403 response",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/Error"
+                        }
+                      }
+                    }
+                  }
+                },
+                "security": [
+                  {
+                    "api_key": []
+                  }
+                ],
+                "x-amazon-apigateway-integration": {
+                  "httpMethod": "POST",
+                  "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:686963384763:function:photoApp-searchLambda-IndexLambdaFuntion-Z7qik4YItsEq/invocations",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Origin": "'*'"
+                      }
+                    }
+                  },
+                  "passthroughBehavior": "when_no_match",
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "type": "aws_proxy"
+                }
+              },
+              "options": {
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Origin": {
+                        "schema": {
+                          "type": "string"
+                        }
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "schema": {
+                          "type": "string"
+                        }
+                      },
+                      "Access-Control-Allow-Headers": {
+                        "schema": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "content": {}
+                  }
+                },
+                "x-amazon-apigateway-integration": {
+                  "responses": {
+                    "200": {
+                      "statusCode": "200",
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'"
+                      }
+                    }
+                  },
+                  "requestTemplates": {
+                    "application/json": "{\"statusCode\":200}"
+                  },
+                  "passthroughBehavior": "when_no_match",
+                  "type": "mock"
+                }
+              }
+            }
+          },
+          "components": {
+            "schemas": {
+              "MODEL2acc98": {
+                "type": "object"
+              },
+              "Error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              },
+              "Photo": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  },
+                  "labels": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "SearchResponse": {
+                "type": "object",
+                "properties": {
+                  "results": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Photo"
+                    }
+                  }
+                }
+              }
+            },
+            "securitySchemes": {
+              "api_key": {
+                "type": "apiKey",
+                "name": "x-api-key",
+                "in": "header"
+              }
+            }
+          },
+          "x-amazon-apigateway-binary-media-types": [
+            "application/octet-stream"
+          ]
+        }
+      }
+    }
+  }
+}
